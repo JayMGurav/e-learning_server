@@ -22,37 +22,31 @@ var instructorSchema = new mongoose.Schema(
     {
         username: {
             type: String,
-            required: [true, 'Username is a required feild']
+            required: [true, 'Username is a required ']
         },
         email: {
             type: String,
-            required: [true, 'Email is the required feild'],
+            required: [true, 'Email is the required '],
             lowercase: true,
             trim: true
         },
         password: {
             type: String,
-            required: [true, 'password is required feil']
+            required: [true, 'password is required ']
         },
         name: {
-            type: String,
-            required: [true, 'Name is required']
+            type: String
         },
         qualification: {
-            type: String,
-            required: [true, 'Qualification is a required feild']
+            type: String
         },
         profession: {
             type: String
         },
         bio: {
-            type: String,
-            required: [true, 'Bio is required']
-        },
-        avatar: {
             type: String
         },
-        gender: {
+        avatar: {
             type: String
         },
         courses: [

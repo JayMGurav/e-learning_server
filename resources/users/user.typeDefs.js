@@ -9,12 +9,18 @@ var userTypeDefs = gql`
         FEMALE
         OTHERS
     }
+    type Score {
+        _id: ID
+        courseId: ID
+        marks: Int
+    }
 
     type User {
         _id: ID!
         username: String!
         email: String!
         name: String!
+        tel: String!
         avatar: String
         dateOfBirth: Date
         gender: Gender
@@ -22,6 +28,7 @@ var userTypeDefs = gql`
         wishList: [Course!]
         cart: [Course!]
         coursesBought: [Course!]
+        score: [Score]
         createdAt: DateTime!
         updatedAt: DateTime!
     }
@@ -36,17 +43,31 @@ var userTypeDefs = gql`
     }
 
     type Query {
-        user(username: String!): User!
+        user(username: String, email: String): User!
         users: [User!]
         me: User!
+        getScore(courseId: ID): User
         cart: [Course!]
     }
     type Mutation {
-        signUp(username: String!, email: String!, password: String!): Boolean!
+        signUp(
+            username: String!
+            tel: String!
+            email: String!
+            password: String!
+        ): Boolean!
         signIn(email: String!, password: String!): String!
         updateMe(input: UserUpdateInputType!): User!
-        buyCourse(source: String!, coursename: String, courseId: ID): User
+        resetPassword(email: String!): Boolean!
+        buyCourse(
+            source: String!
+            email: String!
+            coursename: String
+            courseId: ID!
+        ): User
         addToCart(coursename: String!): Course
+        addCourseScore(courseId: ID): Boolean
+        incrementScore(courseId: ID): Boolean
     }
 `;
 

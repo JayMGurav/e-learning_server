@@ -7,26 +7,28 @@ var bcrypt = require('bcrypt');
 var jwt = require('jsonwebtoken');
 var { AuthenticationError } = require('apollo-server-express');
 var { stripe } = require('../../stripe.js');
+const { v4: uuid } = require('uuid');
 
 require('dotenv').config();
 
 module.exports = {
     //Sign In mutation
 
-    signUp: async (_, { username, email, password }, { models }) => {
+    signUp: async (_, { username, tel, email, password }, { models }) => {
         //hash the password before creating user
         let hashedPassword = await bcrypt.hash(password, 10);
         try {
             //check if there already exist a user with the mail
             let finduser = await models.User.findOne({ email });
             if (finduser) {
-                throw new AuthenticationError(
+                return new AuthenticationError(
                     'Error Signing up the user : User already exist'
                 );
             } else {
                 let user = await models.User.create({
                     username,
                     email,
+                    tel: tel.toString(),
                     password: hashedPassword
                 });
 
@@ -92,60 +94,175 @@ module.exports = {
             // return false;
         }
     },
-    buyCourse: async (_, { source, courseId }, { models, user }) => {
+
+    // resetPassword
+    resetPassword: async (_, { email }, { model }) => {},
+
+    buyCourse: async (_, { source, email, courseId }, { models, user }) => {
         //adds course id to the user document
         // add the transaction details to the transaction details document
         if (!user) {
             throw new Error('User not authenticated');
         }
         try {
-            let userData = await models.User.findOne({
-                _id: user.id
-            });
+            let userData = await models.User.findById(user.id);
             if (!userData) {
                 throw new Error('User not found');
             }
-            let course = await models.Course.findOne({ _id: courseId }).exec();
-
+            let course = await models.Course.findById(courseId).exec();
+            if (!course) {
+                throw new Error('Course not found');
+            }
+            if (
+                userData.coursesBought.includes(
+                    mongoose.Types.ObjectId(courseId)
+                ) &&
+                course.boughtBy.includes(mongoose.Types.ObjectId(user.id))
+            ) {
+                return userData;
+            }
+            const idempotencyKey = uuid();
             //Create the customer with the email and may be stripe id
-            const customer = await stripe.customers.create({
-                email: userData.email,
-                source
-            });
+            if (!userData.stripeID) {
+                var customer = await stripe.customers.create({
+                    email: email,
+                    name: userData.username,
+                    phone: userData.tel,
+                    source: source
+                });
+            }
             //Charge the customer with the amount of the cost of the course
-            const charge = await stripe.charges.create({
-                amount: course.checkoutCost,
-                description: `charged of the course : ${course.coursename}`,
-                currency: 'inr',
-                customer: customer.id
-            });
-
+            const charge = await stripe.charges.create(
+                {
+                    amount: course.checkoutCost * 100,
+                    description: `Charged of the course : ${course.coursename}`,
+                    currency: 'inr',
+                    customer: userData.stripeID || customer.id,
+                    receipt_email: email,
+                    statement_descriptor_suffix: `Charged of the course`
+                },
+                { idempotencyKey }
+            );
+            // console.log(charge);
             // if charging is successfull update the schemas of both : User and Course and then return updated user
             //Change this line for already bought courses
             if (charge) {
-                //upadte bought course in user schema
+                //upadate bought course in user schema
                 let updatedUser = await models.User.findByIdAndUpdate(
                     user.id,
                     {
-                        $set: { stripeID: customer.id },
+                        $set: { stripeID: userData.stripeID || customer.id },
                         $addToSet: {
                             coursesBought: mongoose.Types.ObjectId(courseId)
                         }
                     },
-                    { new: true }
+                    { new: true, safe: true }
                 );
                 //then update bought by in course schema
-                await models.Course.findByIdAndUpdate(
+                let updatedCourse = await models.Course.findByIdAndUpdate(
                     courseId,
                     {
                         $addToSet: {
                             boughtBy: mongoose.Types.ObjectId(user.id)
                         }
                     },
-                    { new: true }
+                    { new: true, safe: true }
                 );
                 //return the updated user
-                return updatedUser;
+                if (updatedUser && updatedCourse) {
+                    return updatedUser;
+                } else {
+                    throw new Error('Not Successful');
+                }
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    },
+    addCourseScore: async (_, { courseId }, { models, user }) => {
+        if (!user) {
+            throw new Error('User not authenticated');
+        }
+        try {
+            let getUser = await models.User.findById(user.id).exec();
+            if (!getUser) {
+                throw new AuthenticationError('Unable to find user');
+            }
+            // console.log(user.id);
+            let cId = mongoose.Types.ObjectId(courseId);
+
+            let findCourseScore = await models.User.find({
+                _id: user.id,
+                score: { $elemMatch: { courseId: cId } }
+            });
+            if (findCourseScore.length === 0) {
+                await models.User.updateOne(
+                    {
+                        _id: user.id
+                    },
+                    {
+                        $addToSet: {
+                            score: {
+                                courseId: cId
+                            }
+                        }
+                    },
+                    { new: true, safe: true }
+                );
+                return true;
+            }
+        } catch (err) {
+            console.error(err);
+        }
+    },
+    incrementScore: async (_, { courseId }, { models, user }) => {
+        if (!user) {
+            throw new Error('User not authenticated');
+        }
+        try {
+            let getUser = await models.User.findById(user.id).exec();
+            if (!getUser) {
+                throw new AuthenticationError('Unable to find user');
+            }
+            // console.log(user.id);
+            let cId = mongoose.Types.ObjectId(courseId);
+
+            let findCourseScore = await models.User.find({
+                _id: user.id,
+                score: { $elemMatch: { courseId: cId } }
+            });
+            if (findCourseScore.length === 0) {
+                await models.User.updateOne(
+                    {
+                        _id: user.id
+                    },
+                    {
+                        $addToSet: {
+                            score: {
+                                courseId: cId
+                            }
+                        }
+                    },
+                    { new: true, safe: true }
+                );
+                return true;
+            } else {
+                let updateDoc = await models.User.updateOne(
+                    {
+                        _id: user.id,
+                        score: { $elemMatch: { courseId: cId } }
+                    },
+                    {
+                        $inc: {
+                            'score.$.marks': 1
+                        }
+                    },
+                    { upsert: true, new: true, safe: true }
+                );
+                if (!updateDoc) {
+                    throw new Error('Score Not updated');
+                }
+                return true;
             }
         } catch (err) {
             console.error(err);

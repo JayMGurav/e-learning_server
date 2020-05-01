@@ -1,32 +1,21 @@
-var { AuthenticationError } = require('');
 module.exports = {
-    intructor: async (_, { username, id }, { models }) => {
+    instructor: async (_, { username, id }, { models }) => {
         let instructor = await models.Instructor.findOne({
-            $or: [{ id }, { username }]
+            $or: [{ _id: id }, { username }]
         }).exec();
         if (!instructor) {
-            throw new Error(
+            return new Error(
                 'Error Getting profile : Could not find the instructor '
             );
+        } else {
+            return instructor;
         }
     },
-    me: async (_, __, { models, user }) => {
+    instructorMe: async (_, __, { models, user }) => {
         if (!user) {
-            throw new AuthenticationError(
-                'Error getting profile : Not a registered user'
-            );
+            return new Error('Error getting profile : Not a registered user');
         }
-        if (user) {
-            let instructor = await models.Instructor.findById({
-                id: user.id
-            }).exec();
-            if (instructor._id == user.id) {
-                return instructor;
-            } else {
-                throw new AuthenticationError(
-                    'Error getting profile : Not a valid user '
-                );
-            }
-        }
+        let instructor = await models.Instructor.findById(user.id).exec();
+        return instructor;
     }
 };

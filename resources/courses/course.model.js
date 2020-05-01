@@ -1,79 +1,54 @@
 var mongoose = require('mongoose');
 
-// Details of each section
-// var SectionDetails = new mongoose.Schema({
-//     timeToComplete: {
-//         type: Number
-//         // required: true
-//     },
-//     title: {
-//         type: String,
-//         required: true
-//     },
-//     detail: {
-//         type: String
-//         // required: true
-//     },
-//     numberOfVideos: {
-//         type: Number
-//         // required: true
-//     },
-//     numberOfReadings: {
-//         type: Number
-//         // required: true
-//     },
-//     numberOfQuizzes: {
-//         type: Number
-//         // required: true
-//     }
-// });
-
-// // Quiz schema
-// var Quiz = new mongoose.Schema({
-//     question: {
-//         type: String
-//         // required: [true, 'Question is required']
-//     },
-//     options: [
-//         {
-//             type: String
-//             // required: [true, 'Options are required']
-//         }
-//     ],
-//     answer: {
-//         type: String,
-//         required: true
-//     }
-// });
+// Quiz schema
+var Quiz = new mongoose.Schema({
+    question: {
+        type: String
+    },
+    options: [
+        {
+            type: String
+        }
+    ],
+    answer: {
+        type: String
+    }
+});
 
 // //Each section has a set of videdos with this schema
-// var SectionVideo = new mongoose.Schema({
-//     videoUrl: { type: String, required: true },
-//     videoContentDetail: { type: String, required: true },
-//     readingResources: [{ type: String }]
-// });
+var SectionContent = new mongoose.Schema({
+    topicName: { type: String, required: true },
+    videoUrl: { type: String, required: true },
+    videoContentDetail: { type: String, required: true },
+    sectionQuiz: Quiz
+});
 
 // //Course is the Array of SectionCourseContent
-// var SectionCourseContent = new mongoose.Schema(
-//     {
-//         sectionDetail: SectionDetails,
-//         videoContent: [SectionVideo],
-//         sectionReadingMaterials: [{ type: String }],
-//         sectionQuiz: [Quiz]
-//     },
-//     { timestamps: true }
-// );
+var CourseSectionContent = new mongoose.Schema(
+    {
+        title: {
+            type: String,
+            required: [true, 'title of thte section is required']
+        },
+        content: [SectionContent]
+    },
+    { timestamps: true }
+);
 
 //Schema of each Course
 var courseSchema = new mongoose.Schema(
     {
         coursename: {
-            type: String
-            // required: [true, 'Name is the required field']
+            type: String,
+            required: [true, 'Name is the required field'],
+            unique: true
         },
         topic: {
+            type: String,
+            required: [true, 'Topic is the required field']
+        },
+        image: {
             type: String
-            // required: [true, 'Topic is the required field']
         },
         tags: [
             {
@@ -81,17 +56,20 @@ var courseSchema = new mongoose.Schema(
                 // required: [true, 'Tags are required']
             }
         ],
+        level: {
+            type: String,
+            required: [true, 'level is required']
+        },
         cost: {
-            type: Number
-            // required: [true, 'Cost is required field']
+            type: Number,
+            required: [true, 'Cost is required field']
         },
         checkoutCost: {
-            type: Number
-            // required: [true, 'Cost is required field']
+            type: Number,
+            required: [true, 'Cost is required field']
         },
         about: {
             type: String
-            // required: [true, 'About section is required ']
         },
         boughtBy: [
             {
@@ -99,25 +77,22 @@ var courseSchema = new mongoose.Schema(
                 ref: 'user'
             }
         ],
-        // instructor: {},
-        // syllabus: [SectionDetails],
+        instructor: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'instructor'
+        },
         approxTimeToComplete: {
             type: String
-            // required: [true, 'Time to complete is required ']
         },
-        // rating: {},
         skills: {
             type: [
                 {
                     type: String
-                    // required: [
-                    //     true,
-                    //     'The skills that will be learning is required'
-                    // ]
                 }
             ]
-        }
-        // courseContent: [SectionCourseContent]
+        },
+        courseContent: [CourseSectionContent],
+        finalQuiz: [Quiz]
     },
     { timestamps: true }
 );

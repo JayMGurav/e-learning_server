@@ -1,52 +1,129 @@
+var mongoose = require('mongoose');
+// const { ObjectId } = mongoose.Types;
+// ObjectId.prototype.valueOf = function() {
+//     return this.toString();
+// };
+
 module.exports = {
     // igh
-    addCourse: async (_, { input }, { models }) => {
+    addCourseDetail: async (_, { input }, { models, user }) => {
         try {
-            let cost = 0;
-            let checkOutCost = 0;
-            // convert Rs to paisa format
-            if (
-                Number.isInteger(input.cost) &&
-                Number.isInteger(input.checkoutCost)
-            ) {
-                cost = input.cost * 100;
-                checkOutCost = input.checkoutCost * 100;
+            // let cost = 0;
+            // let checkOutCost = 0;
+            // // convert Rs to paisa format
+            // if (
+            //     Number.isInteger(input.cost) &&
+            //     Number.isInteger(input.checkoutCost)
+            // ) {
+            //     cost = input.cost * 100;
+            //     checkOutCost = input.checkoutCost * 100;
+            // }
+            let getInstructor = await models.Instructor.findById(
+                user.id
+            ).exec();
+            if (!getInstructor) {
+                return new Error(
+                    'Instructor Not found Not allowed to add this Quiz'
+                );
             }
-
-            let { _doc } = await models.Course.create({
+            let courseDetail = await models.Course.create({
                 ...input,
-                cost: cost,
-                checkoutCost: checkOutCost
+                instructor: mongoose.Types.ObjectId(getInstructor._id),
+                courseContent: []
             });
-            return {
-                ..._doc,
-                cost: _doc.cost / 100,
-                checkoutCost: _doc.checkoutCost / 100
-            };
+            if (courseDetail && getInstructor) {
+                let updatedInstructor = await models.Instructor.findByIdAndUpdate(
+                    user.id,
+                    {
+                        $addToSet: {
+                            courses: mongoose.Types.ObjectId(courseDetail._id)
+                        }
+                    },
+                    { new: true }
+                );
+                if (updatedInstructor) {
+                    return courseDetail._id;
+                } else {
+                    throw new Error('Could not add this course to instructor');
+                }
+            } else {
+                throw new Error('Error during Creating course');
+            }
         } catch (err) {
             console.error('Error occured while adding course : ', err);
         }
+    },
+
+    addCourseSectionContent: async (_, { input }, { models, user }) => {
+        try {
+            let getInstructor = await models.Instructor.findById(
+                user.id
+            ).exec();
+            if (!getInstructor) {
+                return new Error(
+                    'Instructor Not found Not allowed to add this Quiz'
+                );
+            }
+            let course = await models.Course.findById(input._id).exec();
+            if (course) {
+                //update the course document to add the course syllabus
+                let dataToUpdate = {
+                    title: input.title,
+                    content: input.content,
+                    sectionQuiz: input.sectionQuiz
+                };
+                let updatedCourse = await models.Course.findByIdAndUpdate(
+                    input._id,
+                    {
+                        $addToSet: {
+                            courseContent: dataToUpdate
+                        }
+                    },
+                    { new: true }
+                );
+                if (updatedCourse) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                let err = new Error('Course not found ');
+                console.error('Error adding course syllabus : ', err);
+                return false;
+            }
+        } catch (err) {
+            console.error('Error occured while adding course Section : ', err);
+        }
+    },
+    addFinalQuiz: async (_, { input }, { models, user }) => {
+        try {
+            let getInstructor = await models.Instructor.findById(
+                user.id
+            ).exec();
+            if (!getInstructor) {
+                return new Error(
+                    'Instructor Not found Not allowed to add this Quiz'
+                );
+            }
+            let course = await models.Course.findById(input.courseId).exec();
+            if (!course) {
+                return new Error('Course Not found Not able to add this Quiz');
+            }
+            let updatedCourse = await models.Course.findByIdAndUpdate(
+                input.courseId,
+                {
+                    $set: {
+                        finalQuiz: input.quiz
+                    }
+                },
+                { new: true }
+            );
+            if (!updatedCourse) {
+                return new Error('Failed to add quiz to course!!');
+            }
+            return true;
+        } catch {
+            return new Error('Error adding final Quiz : ', err);
+        }
     }
-
-    // addCourseSyllabus: async (_, { input }, { models }) => {
-    //     try {
-    //         // console.log(input);
-    //         let course = await models.Course.findOne({
-    //             $or: [{ id: input.id }, { coursename: input.coursename }]
-    //         }).exec();
-    //         if (course) {
-    //             //update the course document to add the course syllabus
-    //             console.log('Found Course :  ', course);
-    //             return course;
-    //         } else {
-    //             let err = new Error('Course not found ');
-    //             console.error('Error adding course syllabus : ', err);
-    //         }
-
-    //         console.log({ ..._doc, cost: _doc.cost.toString() });
-    //         return { ..._doc, cost: _doc.cost.toString() };
-    //     } catch (err) {
-    //         console.error('Error occured while adding course : ', err);
-    //     }
-    // }
 };

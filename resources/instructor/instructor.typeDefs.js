@@ -10,7 +10,6 @@ var intructorTypeDefs = gql`
         profession: String
         bio: String!
         avatar: String
-        gender: Gender!
         courses: [Course!]
         socialHandles: SocialHandles!
         createdAt: DateTime!
@@ -25,6 +24,14 @@ var intructorTypeDefs = gql`
         twitterHandle: String
     }
 
+    input SocialHandlesInput {
+        websiteHandle: String
+        facebookHandle: String
+        linkedinHandle: String
+        instagramHandle: String
+        twitterHandle: String
+    }
+
     input InstructorInputType {
         username: String
         email: String
@@ -32,28 +39,25 @@ var intructorTypeDefs = gql`
         profession: String
         bio: String
         avatar: String
-        courses: [Courses]
-        socialHandles: SocialHandles
+        socialHandles: SocialHandlesInput
     }
 
-    type Query {
-        intructor(username: String, id: ID): Instructor!
-        me: Instructor!
+    extend type Query {
+        instructor(username: String, id: ID): Instructor!
+        instructorMe: Instructor!
     }
 
-    type Mutation {
+    extend type Mutation {
         instructorSignUp(
             username: String!
             email: String!
             password: String!
         ): Boolean!
 
-        instructorSignIn(
-            username: String!
-            email: String
-            password: String!
-        ): String!
+        instructorSignIn(email: String!, password: String!): String!
 
         instructorUpdateMe(input: InstructorInputType!): Instructor!
     }
 `;
+
+module.exports = intructorTypeDefs;

@@ -1,123 +1,100 @@
 var { gql } = require('apollo-server-express');
 
-// courseContent: [SectionCourseContent]
-// scalar Date
-// syllabus: [SectionDetails]
-// scalar DateTime
 var courseTypeDefs = gql`
+    type SectionContent {
+        _id: ID
+        topicName: String!
+        videoUrl: String!
+        videoContentDetail: String
+        sectionQuiz: Quiz
+    }
+
+    type Quiz {
+        _id: ID
+        question: String
+        options: [String!]
+        answer: String
+    }
+
+    type CourseSectionContent {
+        _id: ID
+        title: String!
+        content: [SectionContent!]
+    }
+
     type Course {
         _id: ID
-        coursename: String
-        topic: String
-        tags: [String]
-        cost: Int
-        checkoutCost: Int
+        coursename: String!
+        image: String!
+        topic: String!
+        tags: [String!]
+        level: String!
+        cost: Int!
+        checkoutCost: Int!
         about: String
+        instructor: Instructor!
         boughtBy: [User!]
-        approxTimeToComplete: Int
-        skills: [String]
+        approxTimeToComplete: String!
+        skills: [String!]
+        courseContent: [CourseSectionContent!]
+        finalQuiz: [Quiz!]
         createdAt: DateTime
         updatedAt: DateTime
     }
-    input CourseInput {
+
+    input InstructorInput {
+        id: ID!
+    }
+
+    input CourseDetailsInput {
         coursename: String!
         topic: String!
         tags: [String!]!
+        level: String!
         cost: Int!
         checkoutCost: Int!
         about: String!
         approxTimeToComplete: String!
         skills: [String!]!
+        image: String!
+    }
+
+    input SectionContentInput {
+        topicName: String!
+        videoUrl: String!
+        videoContentDetail: String
+        sectionQuiz: QuizInput
+    }
+
+    input QuizInput {
+        question: String
+        options: [String!]
+        answer: String
+    }
+
+    input CourseSectionContentInput {
+        _id: ID
+        title: String!
+        content: [SectionContentInput!]
+    }
+
+    input AddFinalQuizInput {
+        courseId: ID
+        quiz: [QuizInput!]
     }
 
     extend type Mutation {
-        addCourse(input: CourseInput): Course
+        addCourseDetail(input: CourseDetailsInput): ID!
+        addCourseSectionContent(input: CourseSectionContentInput): Boolean!
+        addFinalQuiz(input: AddFinalQuizInput!): Boolean!
     }
     extend type Query {
         courses: [Course!]
-        course(coursename: String, id: ID): Course
+        courseById(id: ID): Course
+        getCourseSection(courseId: ID, topicId: ID, contentId: ID): Course
+        isCourseBought(id: ID): Boolean
     }
 `;
+// SectionContent;
 
 module.exports = courseTypeDefs;
-
-// type Courses {
-//     coursename: String!
-//     topic: String!
-//     tags: [String!]!
-//     cost: Int!
-//     checkoutCost: Int!
-//     about: String!
-//     approxTimeToComplete: Int!
-//     skills: [String!]!
-
-// addCourseSyllabus(
-//     id: ID!
-//     coursename: String
-//     syllabus: [CourseSyllabusInput!]
-// ): Course
-
-// type SectionDetails {
-//     timeToComplete: Int!
-//     title: String!
-//     detail: String!
-//     numberOfVideos: Int!
-//     numberOfReadings: Int!
-//     numberOfQuizzes: Int!
-// }
-
-// type Quiz {
-//     question: String!
-//     options: [String!]!
-//     answer: String!
-// }
-
-// type SectionVideo {
-//     videoUrl: String!
-//     videoContentDetail: String!
-//     readingResources: [String!]!
-// }
-
-// type SectionCourseContent {
-//     sectionDetail: SectionDetails!
-//     videoContent: [SectionVideo!]!
-//     sectionReadingMaterials: [String!]!
-//     sectionQuiz: [Quiz!]!
-//     createdAt: DateTime
-//     updatedAt: DateTime
-// }
-
-// input CourseSyllabusInput {
-//     timeToComplete: Int!
-//     title: String!
-//     detail: String!
-//     numberOfVideos: Int!
-//     numberOfReadings: Int!
-//     numberOfQuizzes: Int!
-// }
-// input QuizInput {
-//     question: String!
-//     options: [String!]!
-//     answer: String!
-// }
-
-// input SectionDetailsInput {
-//     timeToComplete: Int!
-//     title: String!
-//     detail: String!
-//     numberOfVideos: Int!
-//     numberOfReadings: Int!
-//     numberOfQuizzes: Int!
-// }
-// input SectionVideoInput {
-//     videoUrl: String!
-//     videoContentDetail: String!
-//     readingResources: [String!]!
-// }
-
-// input SectionCourseContentInput {
-//     sectionDetail: SectionDetailsInput!
-//     videoContent: [SectionVideoInput!]!
-//     sectionReadingMaterials: [String!]!
-//     sectionQuiz: [QuizInput!]!
-// }

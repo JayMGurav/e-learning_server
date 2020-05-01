@@ -10,6 +10,11 @@ var userSchema = new mongoose.Schema(
             required: [true, 'Username is the required field '],
             unique: true
         },
+        tel: {
+            type: String,
+            required: [true, 'Tel no is required field'],
+            unique: true
+        },
         email: {
             type: String,
             required: [true, 'email is the required field '],
@@ -17,6 +22,15 @@ var userSchema = new mongoose.Schema(
             lowercase: true,
             trim: true
         },
+        score: [
+            {
+                courseId: {
+                    type: mongoose.Schema.Types.ObjectId,
+                    ref: 'course'
+                },
+                marks: { type: Number }
+            }
+        ],
         dateOfBirth: {
             type: Date
         },

@@ -45,7 +45,7 @@ var gqlServer = new ApolloServer({
         ${typeDefs}
     `,
     resolvers,
-    validationRules: [depthLimit(5), createComplexityLimitRule(1000)],
+    validationRules: [depthLimit(6), createComplexityLimitRule(3000)],
     context: ({ req }) => {
         let token = req.headers.authorization;
         let user = getUser(token);
@@ -60,7 +60,7 @@ gqlServer.applyMiddleware({
     path: '/api',
     cors: {
         credentials: true,
-        origin: 'http://localhost:8080'
+        origin: 'http://localhost:3000'
     }
 });
 
