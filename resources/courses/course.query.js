@@ -24,8 +24,14 @@ module.exports = {
     },
     isCourseBought: async (_, { id }, { models, user }) => {
         if (user) {
+            // models.User.getPlanCache().clear();
+            // models.Course.getPlanCache().clear();
             let { _doc } = await models.Course.findById(id).exec();
-            if (_doc.boughtBy.includes(user.id)) {
+            let userData = await models.User.findById(user.id);
+            if (
+                _doc.boughtBy.includes(user.id) &&
+                userData.coursesBought.includes(mongoose.Types.ObjectId(id))
+            ) {
                 return true;
             } else {
                 return false;

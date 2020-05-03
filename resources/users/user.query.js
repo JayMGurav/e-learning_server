@@ -9,6 +9,7 @@ module.exports = {
     },
     getScore: async (parent, { courseId }, { models, user }) => {
         // console.log(user.id);
+        // models.User.getPlanCache().clear();
         return await models.User.findOne(
             {
                 _id: user.id,

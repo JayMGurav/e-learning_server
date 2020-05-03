@@ -105,6 +105,8 @@ module.exports = {
             throw new Error('User not authenticated');
         }
         try {
+            // models.User.getPlanCache().clear();
+            // models.Course.getPlanCache().clear();
             let userData = await models.User.findById(user.id);
             if (!userData) {
                 throw new Error('User not found');
@@ -120,6 +122,31 @@ module.exports = {
                 course.boughtBy.includes(mongoose.Types.ObjectId(user.id))
             ) {
                 return userData;
+            }
+
+            if (!source && course.checkoutCost === 0) {
+                let updatedUser = await models.User.findByIdAndUpdate(
+                    user.id,
+                    {
+                        $addToSet: {
+                            coursesBought: mongoose.Types.ObjectId(courseId)
+                        }
+                    },
+                    { new: true, safe: true }
+                );
+                //then update bought by in course schema
+                let updatedCourse = await models.Course.findByIdAndUpdate(
+                    courseId,
+                    {
+                        $addToSet: {
+                            boughtBy: mongoose.Types.ObjectId(user.id)
+                        }
+                    },
+                    { new: true, safe: true }
+                );
+                if (updatedUser && updatedCourse) {
+                    return updatedUser;
+                }
             }
             const idempotencyKey = uuid();
             //Create the customer with the email and may be stripe id
@@ -184,6 +211,8 @@ module.exports = {
             throw new Error('User not authenticated');
         }
         try {
+            // models.User.getPlanCache().clear();
+            // models.Course.getPlanCache().clear();
             let getUser = await models.User.findById(user.id).exec();
             if (!getUser) {
                 throw new AuthenticationError('Unable to find user');
@@ -220,6 +249,8 @@ module.exports = {
             throw new Error('User not authenticated');
         }
         try {
+            // models.User.getPlanCache().clear();
+            // models.Course.getPlanCache().clear();
             let getUser = await models.User.findById(user.id).exec();
             if (!getUser) {
                 throw new AuthenticationError('Unable to find user');

@@ -60,7 +60,7 @@ var userTypeDefs = gql`
         updateMe(input: UserUpdateInputType!): User!
         resetPassword(email: String!): Boolean!
         buyCourse(
-            source: String!
+            source: String
             email: String!
             coursename: String
             courseId: ID!
