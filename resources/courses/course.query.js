@@ -16,7 +16,21 @@ module.exports = {
                     // checkoutCost: (_doc.checkoutCost / 100).toString()
                 };
             } else {
-                console.error('Error : Course not found');
+                throw new Error('Error : Course not found');
+            }
+        } catch (err) {
+            console.error('Error finding course', course);
+        }
+    },
+    courseByName: async (_, { courseName }, { models }) => {
+        try {
+            let course = await models.Course.findOne({
+                coursename: courseName.toString()
+            }).exec();
+            if (course) {
+                return course;
+            } else {
+                return new Error('Course not found');
             }
         } catch (err) {
             console.error('Error finding course', course);

@@ -91,6 +91,7 @@ var courseTypeDefs = gql`
     extend type Query {
         courses: [Course!]
         courseById(id: ID): Course
+        courseByName(courseName: String!): Course
         getCourseSection(courseId: ID, topicId: ID, contentId: ID): Course
         isCourseBought(id: ID): Boolean
     }
